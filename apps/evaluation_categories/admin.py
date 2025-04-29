@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from apps.evaluation_categories.models import EvaluationCategory
+
+admin.site.register(EvaluationCategory)

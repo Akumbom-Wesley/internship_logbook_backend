@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.models import BaseModel
-from apps.school.models import School
+from apps.schools.models import School
 
 
 class Department(BaseModel):

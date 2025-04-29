@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from apps.academic_years.models import AcademicYear
+
+admin.site.register(AcademicYear)

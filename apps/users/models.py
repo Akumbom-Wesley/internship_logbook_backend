@@ -1,6 +1,7 @@
 import re
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -55,7 +56,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, BaseModel):
+class User(AbstractBaseUser, BaseModel, PermissionsMixin):
     ROLE_CHOICES = [
         ('user', 'User'),
         ('student', 'Student'),
@@ -71,6 +72,7 @@ class User(AbstractBaseUser, BaseModel):
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='user')
 
     # Required fields for AbstractBaseUser
+    is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -79,6 +81,13 @@ class User(AbstractBaseUser, BaseModel):
         verbose_name = "User"
         verbose_name_plural = "Users"
         indexes = [models.Index(fields=['email'])]
+
+    # required for Django's admin
+    def has_perm(self, perm, obj=None):
+        return self.is_superuser
+
+    def has_module_perms(self, app_label):
+        return self.is_superuser
 
     def __str__(self):
         return self.email

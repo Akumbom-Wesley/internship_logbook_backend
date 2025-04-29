@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from apps.logbook_entries.models import LogbookEntry
+
+admin.site.register(LogbookEntry)

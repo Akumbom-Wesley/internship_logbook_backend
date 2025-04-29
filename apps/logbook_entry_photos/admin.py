@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from apps.logbook_entry_photos.models import LogbookEntryPhoto
+
+admin.site.register(LogbookEntryPhoto)

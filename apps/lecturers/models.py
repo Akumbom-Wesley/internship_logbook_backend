@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.models import BaseModel
-from apps.department.models import Department
+from apps.departments.models import Department
 from apps.users.models import User
 
 

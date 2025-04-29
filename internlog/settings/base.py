@@ -19,7 +19,7 @@ DJANGO_ENV=os.getenv('DJANGO_ENV', default='development')
 LOCAL_APPS = [
     'apps.academic_years',
     'apps.companies',
-    'apps.department',
+    'apps.departments',
     'apps.evaluation_categories',
     'apps.evaluations',
     'apps.internships',
@@ -28,7 +28,7 @@ LOCAL_APPS = [
     'apps.logbook_entry_photos',
     'apps.logbooks',
     'apps.notifications',
-    'apps.school',
+    'apps.schools',
     'apps.students',
     'apps.supervisors',
     'apps.users',
@@ -100,7 +100,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-#AUTH_USER_MODEL = "users.user"
+AUTH_USER_MODEL = "users.User"
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -133,3 +133,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:8000').split(',')
+
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
