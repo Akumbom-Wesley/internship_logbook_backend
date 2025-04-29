@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class EvaluationCriteriaConfig(AppConfig):
+class EvaluationCategoriesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'evaluation_criteria'
+    name = 'apps.evaluation_categories'
