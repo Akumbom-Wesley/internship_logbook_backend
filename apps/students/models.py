@@ -2,7 +2,8 @@ from django.db import models
 
 from apps.core.models import BaseModel
 from apps.departments.models import Department
-from apps.users.models import User, validate_matricule_num
+from apps.users.models import User
+from apps.utils.validations import validate_matricule_num
 
 
 class Student(BaseModel):

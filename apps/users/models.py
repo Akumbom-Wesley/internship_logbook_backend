@@ -1,30 +1,10 @@
-import re
-
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
-from django.core.exceptions import ValidationError
+
 from django.db import models
 
 from apps.core.models import BaseModel
-
-
-def validate_matricule_num(value):
-    """
-    Validates the format of the matricule number.
-    Expected format: UBa[2-digit year][A-Z][4-digit number] (e.g., UBa25E0001)
-    """
-    pattern = r'^UBa\d{2}[A-Z]\d{4}$'
-    if not re.match(pattern, value):
-        raise ValidationError(
-            "Invalid matricule number format."
-        )
-
-
-def validate_contact(value):
-    pattern = r'^\+2376[245789]\d{7}$'
-    if not re.match(pattern, value):
-        raise ValidationError("Invalid contact number format. Must be in the format +2376[245789]XXXXXXX"
-                              " (e.g., +237 623 456 789).")
+from apps.utils.validations import validate_contact
 
 
 class UserManager(BaseUserManager):

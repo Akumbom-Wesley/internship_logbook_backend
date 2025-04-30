@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
-                ('matricule_num', models.CharField(max_length=10, validators=[apps.users.models.validate_matricule_num])),
+                ('matricule_num', models.CharField(max_length=10, validators=[apps.utils.validations.validate_matricule_num])),
                 ('department', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='departments.department')),
             ],
             options={
