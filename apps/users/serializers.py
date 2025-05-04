@@ -6,19 +6,21 @@ from ..students.models import Student
 from ..students.serializers import StudentSerializer
 from ..supervisors.models import Supervisor
 from ..supervisors.serializers import SupervisorSerializer
+from ..companies.models import CompanyAdmin
+from ..companies.serializers import CompanyAdminSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     user_id = serializers.CharField(source='id', read_only=True)
-    role = serializers.CharField(read_only=True)
+    student = serializers.SerializerMethodField()
+    supervisor = serializers.SerializerMethodField()
+    company_admin = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['user_id', 'full_name', 'email', 'contact', 'role', 'image', 'password']
-        read_only_fields = ['role']
-
-    #TODO: Show student/supervisor info in response
+        fields = ['user_id', 'full_name', 'email', 'contact', 'role', 'image', 'password',
+                  'student', 'supervisor', 'company_admin']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,9 +30,6 @@ class UserSerializer(serializers.ModelSerializer):
             self.fields['contact'].required = True
             self.fields['email'].required = True
             self.fields['image'].required = False
-            self.fields.pop('role', None)
-            self.fields.pop('student', None)
-            self.fields.pop('supervisor', None)
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -53,7 +52,12 @@ class UserSerializer(serializers.ModelSerializer):
         except Supervisor.DoesNotExist:
             return None
 
-
+    def get_company_admin(self, obj):
+        try:
+            company_admin = obj.company_admin
+            return CompanyAdminSerializer(company_admin).data
+        except CompanyAdmin.DoesNotExist:
+            return None
 
 
 class RoleSelectionSerializer(serializers.Serializer):

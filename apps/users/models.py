@@ -42,6 +42,7 @@ class User(AbstractBaseUser, BaseModel, PermissionsMixin):
         ('student', 'Student'),
         ('lecturer', 'Lecturer'),
         ('supervisor', 'Supervisor'),
+        ('company_admin', 'Company Admin'),
         ('super_admin', 'Super Admin')
     ]
 
