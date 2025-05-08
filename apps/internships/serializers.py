@@ -53,3 +53,22 @@ class InternshipSerializer(serializers.ModelSerializer):
         model = Internship
         fields = ['id', 'student', 'company', 'academic_year', 'start_date', 'end_date',
                   'job_description', 'supervisor', 'status']
+
+class InternshipUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Internship
+        fields = ['start_date', 'end_date', 'job_description', 'status', 'supervisor', 'lecturer']
+        # No read_only_fields; all fields are editable by company admins
+
+
+class InternshipBulkUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Internship.STATUS_CHOICES, required=True)
+
+    def validate_company_id(self, value):
+        from apps.company_admins.models import CompanyAdmin
+        request = self.context.get('request')
+        if request and request.user.role == 'company_admin':
+            company_admin = request.user.company_admin
+            if str(company_admin.company.id) != str(value):
+                raise serializers.ValidationError("You can only update internships for your company.")
+        return value
