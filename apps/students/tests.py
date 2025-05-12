@@ -1,52 +1,10 @@
-from django.test import TestCase
-
-# Create your tests here.
 import pytest
-from rest_framework.test import APIClient
-from apps.students.models import Student
-from apps.departments.models import Department, School
-from apps.companies.models import Company
-from apps.academic_years.models import AcademicYear
+
+from django.utils import timezone
+from datetime import datetime
+
 from apps.users.models import User
 from apps.internships.models import InternshipRequest
-
-
-@pytest.fixture
-def client():
-    return APIClient()
-
-
-@pytest.fixture
-def school():
-    return School.objects.create(name="Science")
-
-
-@pytest.fixture
-def department(school):
-    return Department.objects.create(name="Computer Science", school=school)
-
-
-@pytest.fixture
-def company():
-    return Company.objects.create(
-        name="Tech Corp", address="123 Street", contact="+237623456789",
-        email="contact@techcorp.com", division="IT", designation="Manager"
-    )
-
-
-@pytest.fixture
-def academic_year():
-    return AcademicYear.objects.create(start_year=2024, end_year=2025)
-
-
-@pytest.fixture
-def student_user(department):
-    user = User.objects.create_user(
-        email="student@example.com", password="password123",
-        full_name="Student User", contact="+237623456789", role="student"
-    )
-    return Student.objects.create(user=user, matricule_num="UBa25E0001", department=department)
-
 
 @pytest.mark.django_db
 def test_list_students(client, student_user):
@@ -54,7 +12,7 @@ def test_list_students(client, student_user):
         email="admin@example.com", password="password123",
         full_name="Admin User", contact="+237623456789", role="super_admin", is_staff=True
     )
-    response = client.post('/api/users/login/', {"email": "admin@example.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "admin@example.com", "password": "password123"})
     token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
@@ -63,10 +21,9 @@ def test_list_students(client, student_user):
     assert len(response.data) == 1
     assert response.data[0]['matricule_num'] == "UBa25E0001"
 
-
 @pytest.mark.django_db
 def test_create_internship_request(client, student_user, company, academic_year):
-    response = client.post('/api/users/login/', {"email": "student@example.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "student@example.com", "password": "password123"})
     token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
@@ -84,14 +41,16 @@ def test_create_internship_request(client, student_user, company, academic_year)
     assert response.data['company'] == "Tech Corp"
     assert InternshipRequest.objects.count() == 1
 
-
 @pytest.mark.django_db
 def test_student_internship_requests(client, student_user, company, academic_year):
+    aware_start = timezone.make_aware(datetime(2025, 6, 1))
+    aware_end = timezone.make_aware(datetime(2025, 8, 1))
+
     InternshipRequest.objects.create(
         student=student_user, company=company, academic_year=academic_year,
-        start_date="2025-06-01", end_date="2025-08-01", job_description="Test internship"
+        start_date=aware_start, end_date=aware_end, job_description="Test internship"
     )
-    response = client.post('/api/users/login/', {"email": "student@example.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "student@example.com", "password": "password123"})
     token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 

@@ -1,35 +1,8 @@
 import pytest
 from rest_framework.test import APIClient
-
-from apps.students.models import Student
 from apps.users.models import User
-from apps.departments.models import Department, School
-from apps.companies.models import Company
+from apps.students.models import Student
 from apps.supervisors.models import Supervisor
-
-
-@pytest.fixture
-def client():
-    return APIClient()
-
-
-@pytest.fixture
-def school():
-    return School.objects.create(name="Science")
-
-
-@pytest.fixture
-def department(school):
-    return Department.objects.create(name="Computer Science", school=school)
-
-
-@pytest.fixture
-def company():
-    return Company.objects.create(
-        name="Tech Corp", address="123 Street", contact="+237623456789",
-        email="contact@techcorp.com", division="IT", designation="Manager"
-    )
-
 
 @pytest.mark.django_db
 def test_register(client):
@@ -40,11 +13,12 @@ def test_register(client):
         "password": "password123",
         "role": "user"
     }
-    response = client.post('/api/users/register/', payload)
+    response = client.post('/api/auth/register/', payload)
     assert response.status_code == 201
-    assert response.data['message'] == "User registered successfully. Please log in."
+    # Check for fields that UserSerializer returns
+    assert response.data['email'] == "john@example.com"
+    assert response.data['full_name'] == "John Doe"
     assert User.objects.count() == 1
-
 
 @pytest.mark.django_db
 def test_login(client):
@@ -52,11 +26,10 @@ def test_login(client):
         email="john@example.com", password="password123",
         full_name="John Doe", contact="+237623456789", role="user"
     )
-    response = client.post('/api/users/login/', {"email": "john@example.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "john@example.com", "password": "password123"})
     assert response.status_code == 200
     assert 'access' in response.data
     assert 'refresh' in response.data
-
 
 @pytest.mark.django_db
 def test_current_user(client):
@@ -64,14 +37,13 @@ def test_current_user(client):
         email="john@example.com", password="password123",
         full_name="John Doe", contact="+237623456789", role="user"
     )
-    response = client.post('/api/users/login/', {"email": "john@example.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "john@example.com", "password": "password123"})
     token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-    response = client.get('/api/users/me/')
+    response = client.get('/api/auth/me/')
     assert response.status_code == 200
     assert response.data['email'] == "john@example.com"
     assert response.data['role'] == "user"
-
 
 @pytest.mark.django_db
 def test_role_selection_student(client, department):
@@ -79,7 +51,7 @@ def test_role_selection_student(client, department):
         email="john@example.com", password="password123",
         full_name="John Doe", contact="+237623456789", role="user"
     )
-    response = client.post('/api/users/login/', {"email": "john@example.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "john@example.com", "password": "password123"})
     token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
@@ -88,22 +60,21 @@ def test_role_selection_student(client, department):
         "matricule_num": "UBa25E0001",
         "department_id": str(department.id)
     }
-    response = client.post('/api/users/select-role/', payload)
+    response = client.post('/api/auth/select-role/', payload)
     assert response.status_code == 200
     assert response.data['message'] == "Role set to student."
     user.refresh_from_db()
     assert user.role == "student"
     assert Student.objects.count() == 1
 
-
 @pytest.mark.django_db
 def test_role_selection_supervisor(client, company, mocker):
-    mocker.patch('apps.utils.email.send_mail', return_value=None)  # Mock email sending
+    mocker.patch('apps.utils.emails.send_verification_email', return_value=None)
     user = User.objects.create_user(
         email="john@techcorp.com", password="password123",
         full_name="John Doe", contact="+237623456789", role="user"
     )
-    response = client.post('/api/users/login/', {"email": "john@techcorp.com", "password": "password123"})
+    response = client.post('/api/auth/login/', {"email": "john@techcorp.com", "password": "password123"})
     token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
@@ -111,7 +82,7 @@ def test_role_selection_supervisor(client, company, mocker):
         "role": "supervisor",
         "company_id": str(company.id)
     }
-    response = client.post('/api/users/select-role/', payload)
+    response = client.post('/api/auth/select-role/', payload)
     assert response.status_code == 200
     assert response.data['message'] == "Role set to supervisor."
     user.refresh_from_db()
@@ -120,7 +91,6 @@ def test_role_selection_supervisor(client, company, mocker):
     supervisor = Supervisor.objects.first()
     assert supervisor.status == "pending"
 
-
 @pytest.mark.django_db
 def test_verify_supervisor(client, company):
     user = User.objects.create_user(
@@ -128,7 +98,7 @@ def test_verify_supervisor(client, company):
         full_name="John Doe", contact="+237623456789", role="supervisor"
     )
     supervisor = Supervisor.objects.create(user=user, company=company, status="pending")
-    response = client.get(f'/api/users/verify-supervisor/{supervisor.id}/')
+    response = client.get(f'/api/auth/verify-supervisor/{supervisor.id}/')
     assert response.status_code == 200
     supervisor.refresh_from_db()
     assert supervisor.status == "approved"
