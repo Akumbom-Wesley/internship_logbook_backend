@@ -8,7 +8,6 @@ urlpatterns = [
     path('requests/', StudentInternshipRequestsView.as_view(), name='student-internship-requests'),
 ]
 
-# Then add router URLs
 router = DefaultRouter()
 router.register(r'', StudentViewSet)
 
