@@ -15,6 +15,9 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS')
 DEBUG = os.getenv('DEBUG', default=True)
 DJANGO_ENV=os.getenv('DJANGO_ENV', default='development')
 
+FERNET_KEY = os.getenv('FERNET_KEY')
+
+
 # Application definition
 LOCAL_APPS = [
     'apps.academic_years',
@@ -59,7 +62,7 @@ MIDDLEWARE = [
 ]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -129,6 +132,8 @@ SWAGGER_SETTINGS = {
 # Media files (uploads)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = False

@@ -1,5 +1,4 @@
 from django.db import models
-
 from apps.core.models import BaseModel
 from apps.logbook_entries.models import LogbookEntry
 

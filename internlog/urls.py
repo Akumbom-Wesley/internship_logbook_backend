@@ -24,4 +24,8 @@ urlpatterns = [
     path('api/companies/admins/', include('apps.companies.urls.admin_urls')),
     path('api/internships/', include('apps.internships.urls')),
     path('api/supervisors/', include('apps.supervisors.urls')),
+    path('api/logbooks/', include('apps.logbooks.urls')),
+    path('api/weekly-logs/', include('apps.weekly_logs.urls')),
+    path('api/logbook-entries/', include('apps.logbook_entries.urls')),
+    path('api/logbook-entry-photos/', include('apps.logbook_entry_photos.urls')),
 ]

@@ -32,6 +32,8 @@ class InternshipListView(APIView):
         serializer = InternshipSerializer(internships, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+#TODO: Add view to list internship by student and company id
+
 class InternshipDetailView(APIView):
     permission_classes = [IsAuthenticated]
 

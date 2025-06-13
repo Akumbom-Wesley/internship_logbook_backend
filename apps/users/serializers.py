@@ -65,3 +65,16 @@ class RoleSelectionSerializer(serializers.Serializer):
     matricule_num = serializers.CharField(max_length=10, required=False)
     department_id = serializers.IntegerField(required=False)
     company_id = serializers.IntegerField(required=False)
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user = self.user
+        if user.role == 'student':
+            student = user.student
+            try:
+                # Decrypt using server-held key; no password needed
+                decrypted_key = student.get_private_key()
+            except Exception as e:
+                raise serializers.ValidationError("Failed to decrypt private key.") from e
+        return data
