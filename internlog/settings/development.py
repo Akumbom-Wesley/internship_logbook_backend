@@ -14,4 +14,4 @@ DATABASES = {
 # Connection pooling
 DATABASES['default']['CONN_MAX_AGE'] = 300
 
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1', '192.168.1.142']

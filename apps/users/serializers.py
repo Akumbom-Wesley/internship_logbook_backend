@@ -12,6 +12,7 @@ from ..companies.serializers import CompanyAdminSerializer
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
     user_id = serializers.CharField(source='id', read_only=True)
     student = serializers.SerializerMethodField()
     supervisor = serializers.SerializerMethodField()
@@ -20,7 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'full_name', 'email', 'contact', 'role', 'image', 'password',
-                  'student', 'supervisor', 'company_admin']
+                  'confirm_password', 'student', 'supervisor', 'company_admin']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,7 +30,25 @@ class UserSerializer(serializers.ModelSerializer):
             self.fields['full_name'].required = True
             self.fields['contact'].required = True
             self.fields['email'].required = True
+            self.fields['password'].required = True
+            self.fields['confirm_password'].required = True
             self.fields['image'].required = False
+
+    def validate(self, attrs):
+        # Only validate password confirmation during creation (POST requests)
+        request = self.context.get('request', None)
+        if request and request.method == 'POST':
+            password = attrs.get('password')
+            confirm_password = attrs.get('confirm_password')
+
+            if password != confirm_password:
+                raise serializers.ValidationError({
+                    'confirm_password': 'Password and confirm password do not match.'
+                })
+
+        # Remove confirm_password from validated data
+        attrs.pop('confirm_password', None)
+        return attrs
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -58,7 +77,6 @@ class UserSerializer(serializers.ModelSerializer):
             return CompanyAdminSerializer(company_admin).data
         except CompanyAdmin.DoesNotExist:
             return None
-
 
 class RoleSelectionSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=['student', 'supervisor'])
