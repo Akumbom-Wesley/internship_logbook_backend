@@ -49,6 +49,22 @@ class InternshipDetailView(APIView):
         serializer = InternshipSerializer(internship)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class InternshipMyListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'student':
+            return Response({"error": "Only students can view their internships."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            student = request.user.student
+        except AttributeError:
+            return Response({"error": "Student profile not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        internships = Internship.objects.filter(student=student)
+        serializer = InternshipSerializer(internships, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class InternshipUpdateView(APIView):
     permission_classes = [IsAuthenticated]

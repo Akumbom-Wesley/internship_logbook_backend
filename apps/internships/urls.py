@@ -1,11 +1,13 @@
 from django.urls import path
 from apps.internships.views import (
     InternshipListView, InternshipDetailView, InternshipUpdateView,
-    InternshipDeleteView, InternshipBulkUpdateView
+    InternshipDeleteView, InternshipBulkUpdateView,
+     InternshipMyListView
 )
 
 urlpatterns = [
     path('<int:company_id>/list', InternshipListView.as_view(), name='internship-list'),
+    path('list', InternshipMyListView.as_view(), name='internships-by-student'),
     path('<int:internship_id>/', InternshipDetailView.as_view(), name='internship-detail'),
     path('<int:internship_id>/update/', InternshipUpdateView.as_view(), name='internship-update'),
     path('<int:internship_id>/delete/', InternshipDeleteView.as_view(), name='internship-delete'),
