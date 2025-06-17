@@ -14,4 +14,8 @@ DATABASES = {
 # Connection pooling
 DATABASES['default']['CONN_MAX_AGE'] = 300
 
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1', '192.168.1.142']
+ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1', '10.140.91.152']
+CORS_ALLOWED_ORIGINS = [
+    "http://10.140.91.152:8000",  # Adjust to your IP
+    "http://localhost:8000",
+]

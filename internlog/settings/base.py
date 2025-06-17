@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Core settings
 SECRET_KEY = os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = ['*', '192.168.1.142']  # Allow all hosts (for development)
+ALLOWED_HOSTS = ['*', '10.140.91.152']  # Allow all hosts (for development)
 print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
 
