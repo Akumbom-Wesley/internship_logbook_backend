@@ -14,9 +14,9 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
     user_id = serializers.CharField(source='id', read_only=True)
-    student = serializers.SerializerMethodField()
-    supervisor = serializers.SerializerMethodField()
-    company_admin = serializers.SerializerMethodField()
+    student = StudentSerializer(read_only=True)
+    supervisor = SupervisorSerializer(read_only=True)
+    company_admin = CompanyAdminSerializer(read_only=True)
 
     class Meta:
         model = User
