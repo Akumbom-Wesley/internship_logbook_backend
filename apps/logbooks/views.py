@@ -9,11 +9,28 @@ from apps.logbooks.serializers import LogbookSerializer
 class LogbookListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, internship_id=None):
-        if not internship_id:
-            return Response({"error": "Internship ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-        logbooks = Logbook.objects.filter(internship_id=internship_id)
-        serializer = LogbookSerializer(logbooks, many=True)
+    def get(self, request, internship_id):
+        try:
+            logbook = Logbook.objects.get(internship__id=internship_id)
+        except Logbook.DoesNotExist:
+            return Response({"error": "Logbook not found for this internship."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+        internship = logbook.internship
+
+        # Check if user is authorized to view this logbook
+        if user.role == 'student' and internship.student.user != user:
+            return Response({"error": "You can only view your own internship logbook."},
+                            status=status.HTTP_403_FORBIDDEN)
+        if user.role == 'supervisor' and internship.supervisor.user != user:
+            return Response({"error": "You can only view logbooks for your supervised internships."},
+                            status=status.HTTP_403_FORBIDDEN)
+        if user.role not in ['student', 'supervisor', 'super_admin']:
+            return Response({"error": "Unauthorized access to logbook."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        serializer = LogbookSerializer(logbook)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
