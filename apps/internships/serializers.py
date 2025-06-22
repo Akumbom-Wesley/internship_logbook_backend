@@ -3,6 +3,8 @@ from rest_framework import serializers
 from apps.internships.models import InternshipRequest, Internship
 from apps.supervisors.serializers import SupervisorSerializer
 from ..academic_years.models import AcademicYear
+from apps.companies.serializers import CompanySerializer
+from apps.companies.models import CompanyAdmin
 
 
 class InternshipRequestSerializer(serializers.ModelSerializer):
@@ -20,7 +22,6 @@ class InternshipRequestSerializer(serializers.ModelSerializer):
         return StudentSerializer(obj.student, context=self.context).data
 
     def get_company(self, obj):
-        from apps.companies.serializers import CompanySerializer
         return CompanySerializer(obj.company, context=self.context).data
 
     def validate(self, data):
@@ -45,7 +46,7 @@ class InternshipRequestCreateSerializer(serializers.ModelSerializer):
 
 
 class InternshipSerializer(serializers.ModelSerializer):
-    student = serializers.StringRelatedField()
+    student = serializers.SerializerMethodField()
     company = serializers.StringRelatedField()
     supervisor = SupervisorSerializer(read_only=True)
 
@@ -53,6 +54,13 @@ class InternshipSerializer(serializers.ModelSerializer):
         model = Internship
         fields = ['id', 'student', 'company', 'academic_year', 'start_date', 'end_date',
                   'job_description', 'supervisor', 'status']
+
+    def get_student(self, obj):
+        from apps.students.serializers import StudentSerializer
+        return StudentSerializer(obj.student).data
+
+    def get_company(self, obj):
+        return CompanySerializer(obj.company, context=self.context).data
 
 class InternshipUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,7 +73,6 @@ class InternshipBulkUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Internship.STATUS_CHOICES, required=True)
 
     def validate_company_id(self, value):
-        from apps.company_admins.models import CompanyAdmin
         request = self.context.get('request')
         if request and request.user.role == 'company_admin':
             company_admin = request.user.company_admin

@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from apps.logbooks.models import Logbook
 from apps.logbooks.serializers import LogbookSerializer
-
+from apps.internships.models import Internship
 
 class LogbookListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -76,6 +76,31 @@ class LogbookUpdateView(APIView):
         serializer = LogbookSerializer(logbook, data=mutable_data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class OngoingLogbookByInternshipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, internship_id):
+        user = request.user
+
+        if user.role != 'student':
+            return Response({"error": "Only students can access their logbooks."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            internship = Internship.objects.get(id=internship_id, student__user=user)
+        except Internship.DoesNotExist:
+            return Response({"error": "Internship not found or does not belong to you."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            logbook = Logbook.objects.get(internship=internship, status='pending_approval')
+        except Logbook.DoesNotExist:
+            return Response({"error": "No ongoing (pending approval) logbook found for this internship."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        serializer = LogbookSerializer(logbook)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

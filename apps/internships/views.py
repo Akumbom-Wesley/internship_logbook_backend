@@ -93,6 +93,23 @@ class InternshipUpdateView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class OngoingInternshipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if user.role != 'student':
+            return Response({"error": "Only students can access their ongoing internship."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            internship = Internship.objects.get(student__user=user, status='ongoing')
+        except Internship.DoesNotExist:
+            return Response({"error": "No ongoing internship found for this student."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = InternshipSerializer(internship)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class InternshipDeleteView(APIView):
     permission_classes = [IsAuthenticated]
