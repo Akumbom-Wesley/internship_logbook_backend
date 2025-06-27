@@ -182,6 +182,17 @@ class InternshipReportGenerateView(APIView):
     def _create_word_document(self, internship, **sections):
         document = Document()
 
+        # Set default font to Times New Roman, 12pt
+        style = document.styles['Normal']
+        font = style.font
+        font.name = 'Times New Roman'
+        font.size = Pt(12)
+
+        # Set line spacing to 1.5 for all text
+        paragraph_format = style.paragraph_format
+        paragraph_format.line_spacing = 1.5
+        paragraph_format.space_after = Pt(12)  # Add 12pt space after paragraphs
+
         # Title Page
         self._add_title_page(document, internship)
 
