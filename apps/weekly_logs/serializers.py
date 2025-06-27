@@ -6,11 +6,16 @@ from django.utils import timezone
 
 class WeeklyLogSerializer(serializers.ModelSerializer):
     logbook_entries = serializers.SerializerMethodField()
+    week_start_date = serializers.ReadOnlyField()
+    week_end_date = serializers.ReadOnlyField()
 
     class Meta:
         model = WeeklyLog
-        fields = ['id', 'status', 'week_no', 'logbook', 'logbook_entries', 'comment']
-        read_only_fields = ['week_no', 'logbook_entries']
+        fields = [
+            'id', 'status', 'week_no', 'logbook', 'logbook_entries',
+            'comment', 'week_start_date', 'week_end_date'
+        ]
+        read_only_fields = ['week_no', 'logbook', 'logbook_entries']
 
     def get_logbook_entries(self, obj):
         return [
@@ -26,44 +31,25 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        # Get logbook_id from context
-        logbook_id = self.context.get('logbook_id')
-        if not logbook_id:
-            raise serializers.ValidationError("Logbook ID is required.")
+        logbook = self.context['logbook']
 
-        validated_data['logbook_id'] = logbook_id
-        validated_data.pop('week_no', None)  # Ensure week_no is not provided
-        return super().create(validated_data)
-
-    def validate(self, data):
-        logbook_id = self.context.get('logbook_id')
-        if not logbook_id:
-            raise serializers.ValidationError({"logbook_id": "Logbook ID is required in context."})
-
-        if not self.instance:
-            raise serializers.ValidationError({"instance": "No weekly log instance provided."})
-
-        if str(self.instance.logbook.id) != str(logbook_id):
-            raise serializers.ValidationError({"logbook_id": "Logbook ID mismatch."})
-
-        # If approving, ensure all log entries are immutable
-        if data.get('status') == 'approved':
-            if self.instance.logbook_entries.filter(is_immutable=False).exists():
-                raise serializers.ValidationError(
-                    {"status": "Cannot approve weekly log with unapproved entries."}
-                )
-
-        return data
+        weekly_log = WeeklyLog(logbook=logbook, **validated_data)
+        weekly_log.full_clean()  # Ensures clean() runs and sets week_no
+        weekly_log.save()
+        return weekly_log
 
     def update(self, instance, validated_data):
+        # Disallow week number or logbook changes
+        validated_data.pop('week_no', None)
+        validated_data.pop('logbook', None)
+
         try:
             return super().update(instance, validated_data)
         except Exception as e:
             raise serializers.ValidationError(str(e))
 
     def to_representation(self, instance):
-        if not instance.id:
-            instance.save()  # Save to get PK before accessing relations
         data = super().to_representation(instance)
-        data['logbook_entries'] = [str(entry) for entry in instance.logbook_entries.all()]
+        # Include detailed logbook entries information
+        data['logbook_entries'] = self.get_logbook_entries(instance)
         return data

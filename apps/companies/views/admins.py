@@ -11,22 +11,22 @@ from apps.companies.models import CompanyAdmin
 from apps.supervisors.models import Supervisor
 
 
-class ApproveInternshipRequestView(APIView):
+class ApproveRejectInternshipRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, request_id):
-        # Check 1: Role must be company_admin
+        # Check 1: Must be company admin
         if request.user.role != 'company_admin':
-            return Response({"error": "Only company admins can approve internship requests."},
+            return Response({"error": "Only company admins can process internship requests."},
                             status=status.HTTP_403_FORBIDDEN)
 
-        # Check 2: Company admin profile must exist
+        # Check 2: Company admin profile exists
         try:
             company_admin = request.user.company_admin
         except CompanyAdmin.DoesNotExist:
             return Response({"error": "Company admin profile not found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check 3: Internship request must exist and belong to the company admin's company
+        # Check 3: Internship request must exist and belong to the admin's company
         try:
             internship_request = InternshipRequest.objects.get(id=request_id, status='pending')
         except InternshipRequest.DoesNotExist:
@@ -37,21 +37,32 @@ class ApproveInternshipRequestView(APIView):
             return Response({"error": "This request does not belong to your company."},
                             status=status.HTTP_403_FORBIDDEN)
 
-        # Check 4: Supervisor ID must be provided
+        # Check 4: Validate status in request body
+        status_choice = request.data.get('status')
+        if status_choice not in ['approved', 'rejected']:
+            return Response({"error": "Status must be either 'approved' or 'rejected'."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # REJECT: No supervisor required
+        if status_choice == 'rejected':
+            internship_request.status = 'rejected'
+            internship_request.save()
+            return Response({"message": "Internship request rejected successfully."}, status=status.HTTP_200_OK)
+
+        # APPROVED: Supervisor ID must be provided
         supervisor_id = request.data.get('supervisor_id')
         if not supervisor_id:
-            return Response({"error": "Supervisor ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Supervisor ID is required to approve this request."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # # Check 5: Supervisor status must be approved
-        if internship_request.company.supervisor_set.filter(id=supervisor_id, status='approved').exists() is False:
-            return Response({"error": "Supervisor is not approved."}, status=status.HTTP_400_BAD_REQUEST)
-
+        # Check 5: Supervisor must exist and be approved
         try:
-            supervisor = Supervisor.objects.get(id=supervisor_id)
+            supervisor = Supervisor.objects.get(id=supervisor_id, company=company_admin.company, status='approved')
         except Supervisor.DoesNotExist:
-            return Response({"error": "Invalid supervisor ID."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid or unapproved supervisor for this company."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # Create the Internship
+        # Create Internship
         internship = Internship.objects.create(
             student=internship_request.student,
             company=internship_request.company,
@@ -60,16 +71,17 @@ class ApproveInternshipRequestView(APIView):
             end_date=internship_request.end_date,
             job_description=internship_request.job_description,
             supervisor=supervisor,
-            status='waiting'  # Default status, updated in save()
+            status='waiting'
         )
 
-        # Update request status
+        # Mark request as approved
         internship_request.status = 'approved'
         internship_request.save()
 
-        # Serialize the internship before returning
+        # Respond with internship details
         serializer = InternshipSerializer(internship)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 class CompanyAdminInternshipRequestsView(APIView):

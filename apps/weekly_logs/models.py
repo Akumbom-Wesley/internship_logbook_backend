@@ -28,20 +28,25 @@ class WeeklyLog(BaseModel):
         end_date = internship.end_date.date()
         current_date = timezone.now().date()
 
+        # Ensure current date is within internship range
         if current_date < start_date or current_date > end_date:
-            raise ValidationError({"detail": "Weekly log can only be created within the internship period."})
+            raise ValidationError({
+                "detail": "Weekly log can only be created within the internship period."
+            })
 
-        days_since_start = (current_date - start_date).days
-        calculated_week_no = (days_since_start // 7) + 1
-        if not self.pk:  # Set week_no automatically during creation
-            self.week_no = calculated_week_no
+        # Set week number (only during creation)
+        if not self.pk:
+            days_since_start = (current_date - start_date).days
+            self.week_no = (days_since_start // 7) + 1
 
+        # Prevent approval if not all entries are immutable
         if self.status == 'approved' and self.logbook_entries.filter(is_immutable=False).exists():
-            raise ValidationError(
-                {"detail": "Cannot approve the weekly log until all log entries are approved (is_immutable=True)."})
+            raise ValidationError({
+                "detail": "Cannot approve the weekly log until all log entries are approved."
+            })
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()  # Ensures clean() is always called
         super().save(*args, **kwargs)
 
     def __str__(self):

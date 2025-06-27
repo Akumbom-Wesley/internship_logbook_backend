@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from apps.weekly_logs.models import WeeklyLog
+from apps.logbooks.models import Logbook
 from apps.weekly_logs.serializers import WeeklyLogSerializer
 
 
@@ -39,17 +40,28 @@ class WeeklyLogCreateView(APIView):
         try:
             logbook = Logbook.objects.get(id=logbook_id)
         except Logbook.DoesNotExist:
-            return Response({"error": "Logbook not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Logbook not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Ensure only the student who owns the logbook can create a weekly log
-        if request.user.role != 'student' or logbook.internship.student.user != request.user:
-            return Response({"error": "You are not authorized to create a weekly log for this logbook."},
-                            status=status.HTTP_403_FORBIDDEN)
+        # Authorization
+        if not (request.user.role == 'student' and
+                logbook.internship.student.user == request.user):
+            return Response(
+                {"error": "You are not authorized to create weekly logs."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        serializer = WeeklyLogSerializer(data=request.data, context={"logbook": logbook})
-        serializer.is_valid(raise_exception=True)
-        serializer.save(logbook=logbook)  # Explicitly pass logbook to serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer = WeeklyLogSerializer(
+            data=request.data,
+            context={'logbook': logbook}
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class WeeklyLogUpdateView(APIView):

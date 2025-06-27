@@ -4,8 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.db.models import Q
 from apps.internships.models import Internship
-from apps.internships.serializers import InternshipSerializer, InternshipUpdateSerializer, \
-    InternshipBulkUpdateSerializer
+from apps.internships.serializers import InternshipSerializer, InternshipUpdateSerializer, InternshipRequestSerializer, InternshipBulkUpdateSerializer
 
 
 class InternshipListView(APIView):
@@ -169,3 +168,4 @@ class InternshipBulkUpdateView(APIView):
         updated_count = internships.update(status=new_status)
         return Response({"message": f"Updated status to '{new_status}' for {updated_count} internships."},
                         status=status.HTTP_200_OK)
+
