@@ -8,6 +8,7 @@ load_dotenv()
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+GEMINI_API_KEY = 'AIzaSyAT46M_-89pHWGIFDIjcWawhMHbmoQgrjU'
 
 # Core settings
 SECRET_KEY = os.getenv('SECRET_KEY')

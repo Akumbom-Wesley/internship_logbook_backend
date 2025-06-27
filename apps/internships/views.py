@@ -1,11 +1,11 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.db.models import Q
-from apps.internships.models import Internship
 from apps.internships.serializers import InternshipSerializer, InternshipUpdateSerializer, InternshipRequestSerializer, InternshipBulkUpdateSerializer
-
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import FileResponse
+from apps.internships.models import Internship
+from ..utils.internship_report import InternshipReportGenerateView
 
 class InternshipListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -168,4 +168,28 @@ class InternshipBulkUpdateView(APIView):
         updated_count = internships.update(status=new_status)
         return Response({"message": f"Updated status to '{new_status}' for {updated_count} internships."},
                         status=status.HTTP_200_OK)
+
+
+class InternshipReportDownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, internship_id):
+        try:
+            internship = Internship.objects.select_related(
+                'student__user', 'student__department__school',
+                'company', 'supervisor__user',
+                'logbook'
+            ).prefetch_related(
+                'logbook__weekly_logs__logbook_entries'
+            ).get(id=internship_id, student__user=request.user)
+        except Internship.DoesNotExist:
+            return Response({"error": "Internship not found or unauthorized."}, status=status.HTTP_404_NOT_FOUND)
+
+        if internship.status != 'completed':
+            return Response({"error": "Internship must be completed before report generation."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        buffer = generate_internship_report(internship)
+        filename = f"internship_report_{request.user.full_name.replace(' ', '_')}.docx"
+        return FileResponse(buffer, as_attachment=True, filename=filename)
 

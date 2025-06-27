@@ -26,6 +26,10 @@ class Internship(BaseModel):
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     supervisor = models.ForeignKey(Supervisor, on_delete=models.CASCADE)
+
+    report_generated = models.BooleanField(default=False)
+    report_file = models.FileField(upload_to='internship_reports/', null=True, blank=True)
+
     lecturer = models.ForeignKey(Lecturer, on_delete=models.SET_NULL, null=True, blank=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='internships')
 

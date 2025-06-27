@@ -242,3 +242,4 @@ def generate_evaluation_pdf(evaluation: Evaluation):
     c.save()
     buffer.seek(0)  # Reset buffer position
     return buffer
+

@@ -12,9 +12,19 @@ from cryptography.hazmat.backends import default_backend
 from django.conf import settings
 
 class Student(BaseModel):
+
+    LEVEL_CHOICES = [
+        ('200','200'),
+        ('300','300'),
+        ('400','400'),
+        ('500','500'),
+        ('600','600'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student')
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     matricule_num = models.CharField(max_length=10, validators=[validate_matricule_num])
+    level = models.CharField(max_length=5, choices=LEVEL_CHOICES)
 
     # We store the public key and encrypted private key
     public_key = models.TextField(blank=True)
