@@ -1,31 +1,32 @@
-from django.core.exceptions import ValidationError
 from django.db import models
-
+from django.core.exceptions import ValidationError
 from apps.core.models import BaseModel
-from apps.evaluations.models import Evaluation
+from apps.evaluations.models import Evaluation, EvaluationTemplate
 
 
 class EvaluationCategory(BaseModel):
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='categories')
-    name = models.CharField(max_length=50)
+    template = models.ForeignKey(EvaluationTemplate, on_delete=models.CASCADE)
     subfields_total = models.IntegerField(default=0, editable=False)
 
+    @property
+    def name(self):
+        return self.template.name
+
     def clean(self):
-        # Check subfield limit
-        subfield_count = self.subfields.count()
-        if subfield_count > 4:
-            raise ValidationError("An evaluation category cannot have more than 4 subfields.")
+        # Only validate if the category has been saved and subfields exist
+        if self.pk and self.subfields.count() != 4:
+            raise ValidationError("Each category must contain exactly 4 subfields.")
+
+    def calculate_score(self):
+        self.subfields_total = sum(sf.score for sf in self.subfields.all())
 
     def save(self, *args, **kwargs):
-        self.clean()
+        # First save without validation
         super().save(*args, **kwargs)
-        # Compute subfields_total
-        self.subfields_total = sum(subfield.score for subfield in self.subfields.all())
-        self.save(update_fields=['subfields_total'])
 
-    class Meta:
-        verbose_name = "Evaluation Category"
-        verbose_name_plural = "Evaluation Categories"
-
-    def __str__(self):
-        return self.name
+        # Only run validation and score calculation if subfields exist
+        if self.subfields.exists():
+            self.clean()
+            self.calculate_score()
+            super().save(update_fields=['subfields_total'])

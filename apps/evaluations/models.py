@@ -1,5 +1,5 @@
-from django.core.exceptions import ValidationError
 from django.db import models
+from django.core.exceptions import ValidationError
 from apps.core.models import BaseModel
 from apps.internships.models import Internship
 
@@ -10,18 +10,30 @@ class Evaluation(BaseModel):
     internship = models.OneToOneField(Internship, on_delete=models.CASCADE, related_name='evaluation')
 
     def clean(self):
-        category_count = self.categories.count()
-        if category_count != 5:
+        # Only validate if the evaluation has been saved and categories exist
+        if self.pk and self.categories.count() != 5:
             raise ValidationError("An evaluation must have exactly 5 categories.")
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.clean()
-        # Compute total_score as the sum of subfields_total from all categories
-        self.total_score = sum(category.subfields_total for category in self.categories.all())
+    def calculate_score(self):
+        self.total_score = sum(cat.subfields_total for cat in self.categories.all())
         if self.total_score > 100:
             raise ValidationError("Total score cannot exceed 100.")
-        self.save(update_fields=['total_score'])
 
-    def __str__(self):
-        return f"Evaluation for {self.internship} - Score: {self.total_score}"
+    def save(self, *args, **kwargs):
+        # First save without validation
+        super().save(*args, **kwargs)
+
+        # Only run validation and score calculation if categories exist
+        if self.categories.exists():
+            self.clean()
+            self.calculate_score()
+            super().save(update_fields=['total_score'])
+
+
+class EvaluationTemplate(BaseModel):
+    """Template for hardcoded evaluation categories and subfields"""
+    name = models.CharField(max_length=100, unique=True)
+    order = models.IntegerField()
+
+    class Meta:
+        ordering = ['order']

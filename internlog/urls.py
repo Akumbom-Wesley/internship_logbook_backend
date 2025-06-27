@@ -33,4 +33,5 @@ urlpatterns = [
     path('api/weekly-logs/', include('apps.weekly_logs.urls')),
     path('api/logbook-entries/', include('apps.logbook_entries.urls')),
     path('api/logbook-entry-photos/', include('apps.logbook_entry_photos.urls')),
+    path('api/evaluations/', include('apps.evaluations.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -27,6 +27,7 @@ LOCAL_APPS = [
     'apps.companies',
     'apps.departments',
     'apps.evaluation_categories',
+    'apps.evaluation_category_subfields',
     'apps.evaluations',
     'apps.internships',
     'apps.lecturers',
