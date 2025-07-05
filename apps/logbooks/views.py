@@ -6,6 +6,17 @@ from apps.logbooks.models import Logbook
 from apps.logbooks.serializers import LogbookSerializer
 from apps.internships.models import Internship
 
+import os
+from django.conf import settings
+from rest_framework.views import APIView
+from django.http import FileResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from io import BytesIO
+from datetime import datetime
+from apps.logbooks.utils import generate_logbook_pdf
+
+
 class LogbookListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -118,3 +129,39 @@ class LogbookDeleteView(APIView):
             return Response({"error": "You can only delete your own logbook."}, status=status.HTTP_403_FORBIDDEN)
         logbook.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class LogbookPDFDownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.role != 'student':
+            return Response({"error": "Only students can download their logbooks."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            internship = Internship.objects.get(student__user=user, status='completed')
+        except Internship.DoesNotExist:
+            return Response({"error": "Completed internship not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            logbook = Logbook.objects.prefetch_related('weekly_logs__logbook_entries').get(internship=internship)
+        except Logbook.DoesNotExist:
+            return Response({"error": "Logbook not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Generate PDF
+        pdf_buffer = generate_logbook_pdf(logbook)
+
+        # Ensure media/logbooks directory exists
+        logbook_dir = os.path.join(settings.MEDIA_ROOT, 'logbooks')
+        os.makedirs(logbook_dir, exist_ok=True)
+
+        # Define file path
+        filename = f"logbook_{internship.id}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        file_path = os.path.join(logbook_dir, filename)
+
+        # Save PDF to file
+        with open(file_path, 'wb') as f:
+            f.write(pdf_buffer.getvalue())
+
+        # Serve the file
+        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=filename)

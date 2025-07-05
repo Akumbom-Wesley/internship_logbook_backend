@@ -11,7 +11,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ['matricule_num', 'department', 'internship_requests']
+        fields = ['matricule_num', 'department', 'level', 'internship_requests']
 
     def get_internship_requests(self, obj):
         from apps.internships.serializers import InternshipRequestSerializer

@@ -12,7 +12,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Core settings
 SECRET_KEY = os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = ['*', '10.140.91.152']  # Allow all hosts (for development)
+ALLOWED_HOSTS = ['*', '10.111.147.152']  # Allow all hosts (for development)
 print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
 

@@ -1,6 +1,11 @@
-from rest_framework import generics, permissions
+from rest_framework import permissions
 from apps.companies.models import Company
 from apps.companies.serializers import CompanySerializer
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from apps.supervisors.models import Supervisor
+from apps.supervisors.serializers import SupervisorSerializer
+
 
 # Custom permission for company admins to update
 class IsCompanyAdminOrReadOnly(permissions.BasePermission):
@@ -41,3 +46,12 @@ class CompanyDeleteView(generics.DestroyAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+class CompanySupervisorsListView(generics.ListAPIView):
+    serializer_class = SupervisorSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        company_id = self.kwargs.get('company_id')
+        return Supervisor.objects.filter(company_id=company_id)

@@ -2,7 +2,8 @@ from django.urls import path
 from apps.logbooks.views import (
     LogbookListView, LogbookDetailView,
     LogbookCreateView, LogbookUpdateView,
-    LogbookDeleteView, OngoingLogbookByInternshipView
+    LogbookDeleteView, OngoingLogbookByInternshipView,
+    LogbookPDFDownloadView
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path('<int:logbook_id>/update/', LogbookUpdateView.as_view(), name='logbook-update'),
     path('<int:internship_id>/ongoing/', OngoingLogbookByInternshipView.as_view(), name='student-ongoing-logbook'),
     path('<int:logbook_id>/delete/', LogbookDeleteView.as_view(), name='logbook-delete'),
+    path('download/', LogbookPDFDownloadView.as_view(), name='download_logbook_pdf'),
 ]

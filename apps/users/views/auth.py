@@ -2,12 +2,12 @@ from django.contrib.auth import logout
 from django.db import transaction
 
 from rest_framework import status
-from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.serializers import UserSerializer, RoleSelectionSerializer, CustomTokenObtainPairSerializer
 from apps.users.models import User
@@ -121,3 +121,18 @@ class VerifySupervisorView(APIView):
             return Response({"message": "Supervisor verified successfully."}, status=status.HTTP_200_OK)
         except Supervisor.DoesNotExist:
             return Response({"error": "Invalid or already verified supervisor."}, status=status.HTTP_400_BAD_REQUEST)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if refresh_token is None:
+                return Response({"error": "Refresh token required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        except TokenError:
+            return Response({"error": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
